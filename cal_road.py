@@ -7,17 +7,19 @@ import numpy as np
 
 img_raw = cv2.imread('./0_threshold.png')
 
+
 kernel_0 = np.ones((7, 7), dtype=np.uint8)
 kernel_1 = np.ones((25, 25), dtype=np.uint8)
 
-
-img = cv2.erode(img_raw, kernel_0)
+img = cv2.cvtColor(img_raw, cv2.COLOR_BGR2GRAY)
+# img = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+# img = cv2.equalizeHist(img)
+img = cv2.erode(img, kernel_0)
 img = cv2.dilate(img, kernel_1)
 cv2.imshow('Close', img)
 
 
 # 直线拟合部分
-img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 contours, hierarfchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 cnt = contours[0]
 M = cv2.moments(cnt)
