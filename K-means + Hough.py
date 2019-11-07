@@ -29,7 +29,7 @@ center = np.uint8(center)
 A = np.resize(label.ravel(), (img.shape[0], img.shape[1]))  # 录入k-means结果
 
 # 获取地面区域组号
-if A is not None:
+if A is not None:   # 判定条件：区域大的为地面
     value = 0
     counter = 0
     for i in range(K):

@@ -5,7 +5,7 @@
 import cv2
 import numpy as np
 
-img_raw = cv2.imread('./testLib/0_threshold.png')
+img_raw = cv2.imread('../testLib/0_threshold.png')
 
 
 kernel_0 = np.ones((7, 7), dtype=np.uint8)
