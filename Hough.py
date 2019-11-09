@@ -7,7 +7,7 @@ time_start = time.perf_counter()
 """
 读取图像 与 初步处理
 """
-img = cv2.resize(cv2.imread('./testLib/Low/14.jpg', cv2.IMREAD_GRAYSCALE), (640, 480))
+img = cv2.resize(cv2.imread('./testLib/Low/3.jpg', cv2.IMREAD_GRAYSCALE), (640, 480))
 cv2.imshow('Step1.Raw', img)
 
 blur = img
@@ -26,7 +26,7 @@ cv2.imshow('Step3.Edge', edge)
 """
 Hough处理
 """
-lines = cv2.HoughLines(edge, 1, np.pi / 180 * 2, 120)
+lines = cv2.HoughLines(edge, 1, np.pi / 180 * 2, 110)
 if lines is not None:
     hough = np.zeros(edge.shape, dtype=np.uint8)
     line_direct_theta = 0   # 记录角度
