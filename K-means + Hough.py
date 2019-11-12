@@ -22,7 +22,7 @@ def cal_kmeans(src):
     iData = src.reshape((-1, 3))    # 将三维数组变成二维数组
     iData = np.float32(iData)
     # define criteria, number of clusters(K) and apply kmeans()
-    criteria = (cv2.TERM_CRITERIA_EPS, 5, 5.0)    # 标准
+    criteria = (cv2.TERM_CRITERIA_EPS, 8, 5.0)    # 标准
     K = 3   # 聚类数量
     ret, label, center = cv2.kmeans(iData, K, None, criteria, 4, cv2.KMEANS_RANDOM_CENTERS)
 
@@ -149,33 +149,32 @@ def cal_hough(imgEdge, src=None):
 """
 Main Function
 """
-camera = cv2.VideoCapture(1)
+camera = cv2.VideoCapture(0)
 
 while True:
     # 开始计时
     time_start = time.perf_counter()
 
     # 图像初步处理
-    # frame = cv2.resize(cv2.imread('./testLib/Low/3.jpg'), (640, 480))
-    ret, frame = camera.read()
+    frame = cv2.imread('./testLib/Low/1.jpg')
+    # ret, frame = camera.read()
     img = cv2.resize(frame, (640, 480))
 
     # 开始计算
     blur = cal_blur(img)                            # 模糊
     kmeans = cal_kmeans(blur)                       # K-Means计算
-    morphology = kmeans # 腐蚀、平滑
-    #cal_morphology(kmeans)             # 形态学运算
+    morphology = cal_morphology(kmeans)             # 形态学运算
     edge = cal_edge(morphology)                     # 边缘计算
     img_hough, img_direct = cal_hough(edge, img)    # 直线拟合
 
     # 结果显示
     # cv2.imshow('kmeans', kmeans)
     cv2.imshow('Step1.Blur', blur)
-    # cv2.imshow('Step2.Morphology', morphology)
-    cv2.imshow('Step3.Edge', edge)
-    if img_hough is not None:
-        cv2.imshow('Step4.Hough', img_hough)
-        print(f'direct:{img_direct}')
+    cv2.imshow('Step2.Morphology', morphology)
+    # cv2.imshow('Step3.Edge', edge)
+    # if img_hough is not None:
+    #     cv2.imshow('Step4.Hough', img_hough)
+    #     print(f'direct:{img_direct}')
 
     # 显示处理时间
     time_elapsed = (time.perf_counter() - time_start)

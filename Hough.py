@@ -77,15 +77,15 @@ def hough(imgEdge, src=None):
 """
 Main Function
 """
-# img = cv2.resize(cv2.imread('./testLib/Low/3.jpg', cv2.IMREAD_GRAYSCALE), (640, 480))
-camera = cv2.VideoCapture(1)
+# camera = cv2.VideoCapture(1)
 
 while True:
     # 开始计时
     time_start = time.perf_counter()
 
     # 图像初步处理
-    ret, frame = camera.read(cv2.IMREAD_GRAYSCALE)
+    frame = cv2.imread('./testLib/Low/0.jpg')
+    # ret, frame = camera.read(cv2.IMREAD_GRAYSCALE)
     img = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     img = cv2.resize(img, (640, 480))
 
@@ -101,6 +101,9 @@ while True:
     if img_hough is not None:
         cv2.imshow('Step4.Hough', img_hough)
         print(f'direct:{img_direct}')
+        print(f'\n\nStraight!')
+    else:
+        print(f'\n\nTurn!')
 
     # 显示处理时间
     time_elapsed = (time.perf_counter() - time_start)
