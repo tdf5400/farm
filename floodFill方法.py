@@ -7,6 +7,7 @@ log:
 1、【实现竖直方向的seed选取---19.11.08】seed点选取的选择算法：若涂色数量小于某个阈值，向上y像素再次判断，
     直到超过阈值
 2、水平线以上画面置黑，减少干扰（一段时间进行一次判断）
+3、不同光照条件下自动选取floodfill明暗阈值（通过直方图峰值？）
 """
 
 
@@ -17,8 +18,15 @@ def cal_floodFill(image):
     :return: copyImg, threImg
     """
     copyImg = cv2.medianBlur(image, 3)
+
+    # BGR转换为HSV进行处理
+    copyImg = cv2.cvtColor(copyImg, cv2.COLOR_BGR2HSV)
+
     h, w = image.shape[:2]
     mask = np.zeros([h + 2, w + 2], dtype=np.uint8)  # mask必须行和列都加2，且必须为uint8单通道阵列
+
+    # 过高区域不进行处理
+    mask[0:50][:] = 255
 
     # 计算种子点
     seedThreshold = 20000   # 最少像素值
@@ -29,7 +37,7 @@ def cal_floodFill(image):
 
     while True:
         # floodFill
-        cv2.floodFill(copyImg, mask, tuple(seed), (255, 255, 255), (55,50,50), (65,60,60), flags=cv2.FLOODFILL_FIXED_RANGE)
+        cv2.floodFill(copyImg, mask, tuple(seed), (255, 255, 255), (20,150,255), (20,150,255), flags=cv2.FLOODFILL_FIXED_RANGE)
 
         # 二值化并统计渲染数量
         threImg = cv2.inRange(copyImg, copyImg[seed[1], seed[0]], copyImg[seed[1], seed[0]])    # 将与种子点一样变成白色的点划出来
@@ -42,19 +50,24 @@ def cal_floodFill(image):
             times += 1
             if times < timesLimit:
                 seed[1] -= seedMoveDistance   # seed上移
-
             else:
                 return None, None
 
     # 形态学运算
-    kernel = np.ones((7, 7), dtype=np.uint8)
+    kernel = np.ones((33, 33), dtype=np.uint8)
     threImg = cv2.morphologyEx(threImg, cv2.MORPH_CLOSE, kernel)
-    kernel = np.ones((15, 15), dtype=np.uint8)
-    threImg = cv2.morphologyEx(threImg, cv2.MORPH_OPEN, kernel)
-    kernel = np.ones((29, 29), dtype=np.uint8)
+    # kernel = np.ones((15, 15), dtype=np.uint8)
+    # threImg = cv2.morphologyEx(threImg, cv2.MORPH_OPEN, kernel)
+    kernel = np.ones((13, 13), dtype=np.uint8)
     threImg = cv2.morphologyEx(threImg, cv2.MORPH_ERODE, kernel)
 
+    # 色彩空间转换BGR
+    copyImg = cv2.cvtColor(copyImg, cv2.COLOR_HSV2BGR)
+
     return copyImg, threImg
+
+
+
 
 """
 Main
@@ -67,11 +80,29 @@ while True:
 
     # 获取图像
     ret, src = camera.read()
-    # src = cv2.imread('./testLib/Low/8.jpg')
+    # src = cv2.imread('./testLib/farm/11.jpg')
+
     img = cv2.resize(src, (640, 480))
 
     copyImg, threImg = cal_floodFill(img)
-    cv2.imshow('input_image', img)
+
+
+    import roadCal.roadCal as rc
+    if threImg is None:
+        continue
+    threImg = cv2.GaussianBlur(threImg, (53,53), sigmaX=0)
+    line, direct = rc.hough(cv2.Canny(threImg, 100, 127))
+
+    if line is not None:
+        cv2.imshow('line', line)
+        if 30 < direct < 150:
+            print(f'Straight!')
+        else:
+            print(f'Turn!')
+            print(f'{direct}')
+    else:
+        print(f'Turn!')
+
     cv2.imshow('floodFill', copyImg)
     cv2.imshow('Threshold', threImg)
 

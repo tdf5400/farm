@@ -37,7 +37,7 @@ def hough(imgEdge, src=None):
     if src is None:
         src = np.zeros(imgEdge.shape, dtype=np.uint8)
 
-    lines = cv2.HoughLines(imgEdge, 1, np.pi / 180 * 2, 110)
+    lines = cv2.HoughLines(imgEdge, 1, np.pi / 180 * 2, 100)
     if lines is not None:
         __ground = np.zeros(imgEdge.shape, dtype=np.uint8)
         line_direct_theta = 0  # 记录角度
@@ -63,7 +63,7 @@ def hough(imgEdge, src=None):
                 line_direct_theta += theta
                 line_direct_times += 1
                 # 打印每条线的信息
-                # print(rho, __lineTheta)
+                print(rho, __lineTheta)
         # cv2.imshow('Setp4.Hough', src)
         # 计算指引线
         if line_direct_times is not 0:
@@ -77,15 +77,15 @@ def hough(imgEdge, src=None):
 """
 Main Function
 """
-# camera = cv2.VideoCapture(1)
+camera = cv2.VideoCapture(0)
 
 while True:
     # 开始计时
     time_start = time.perf_counter()
 
     # 图像初步处理
-    frame = cv2.imread('./testLib/Low/0.jpg')
-    # ret, frame = camera.read(cv2.IMREAD_GRAYSCALE)
+    # frame = cv2.imread('./testLib/Low/0.jpg')
+    ret, frame = camera.read(cv2.IMREAD_GRAYSCALE)
     img = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     img = cv2.resize(img, (640, 480))
 
@@ -101,9 +101,12 @@ while True:
     if img_hough is not None:
         cv2.imshow('Step4.Hough', img_hough)
         print(f'direct:{img_direct}')
-        print(f'\n\nStraight!')
+        if 45 < img_direct < 135:
+            print(f'\n\nStraight!{img_direct}')
+        else:
+            print(f'\n\nTurn!{img_direct}')
     else:
-        print(f'\n\nTurn!')
+        print(f'\n\nTurn!{img_direct}')
 
     # 显示处理时间
     time_elapsed = (time.perf_counter() - time_start)
@@ -114,3 +117,5 @@ while True:
     if keyAction == 27:  # Esc
         cv2.destroyAllWindows()
         break
+    elif keyAction == 's':  # save
+        cv2.imwrite('./testLib/1.jpg', frame)
