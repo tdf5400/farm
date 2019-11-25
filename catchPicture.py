@@ -5,7 +5,7 @@ import cv2
 """
 Main
 """
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture(0)
 
 # 读取快门数
 log = np.load('./testLib/camera/log.npz')
@@ -27,7 +27,7 @@ while True:
         number += 1
 
 # 退出程序
-number = 0  # 清空读数
+# number = 0  # 清空读数
 np.savez('./testLib/camera/log.npz', order_number=number)
 cap.release()
 cv2.destroyAllWindows()
