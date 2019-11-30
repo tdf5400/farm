@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import time
+import roadCal.roadCal as rc
 
 """
 log:
@@ -9,7 +10,11 @@ log:
 2、【已实现】水平线以上画面置黑，减少干扰（一段时间进行一次判断）
 3、不同光照条件下自动选取floodfill明暗阈值（通过直方图峰值？）
 4、【实现左右取中值】路径走势计算（边缘走势？十字法？）
-5、动作规划（直线曲率？）
+5、【通过十字法实现】动作规划（直线曲率？）
+6、【已实现】若道路两侧是开放的，做出相应判断
+7、【fitRoad_middle函数拟合直线部分未完成】直线状态下的姿态纠正
+8、有障碍物存在的直线规划
+9、摄像头被遮挡判断
 """
 
 
@@ -39,7 +44,7 @@ def cal_floodFill(image):
 
     while True:
         # floodFill
-        cv2.floodFill(copyImg, mask, tuple(seed), (255, 255, 255), (10,255,255), (60,255,255), flags=cv2.FLOODFILL_FIXED_RANGE)
+        cv2.floodFill(copyImg, mask, tuple(seed), (255, 255, 255), (20,100,255), (40,150,255), flags=cv2.FLOODFILL_FIXED_RANGE)
 
         # 二值化并统计渲染数量
         threImg = cv2.inRange(copyImg, copyImg[seed[1], seed[0]], copyImg[seed[1], seed[0]])    # 将与种子点一样变成白色的点划出来
@@ -56,7 +61,7 @@ def cal_floodFill(image):
                 return None, None
 
     # 形态学运算
-    kernel = np.ones((63, 63), dtype=np.uint8)
+    kernel = np.ones((57, 57), dtype=np.uint8)
     threImg = cv2.morphologyEx(threImg, cv2.MORPH_CLOSE, kernel)
     # kernel = np.ones((35, 35), dtype=np.uint8)
     # threImg = cv2.morphologyEx(threImg, cv2.MORPH_OPEN, kernel)
@@ -81,25 +86,30 @@ while True:
     time_start = time.perf_counter()
 
     # 获取图像
-    # ret, src = camera.read()
-    src = cv2.imread('./testLib/camera/16.jpg')
+    ret, src = camera.read()
+    # src = cv2.imread('./testLib/camera/20.jpg')
 
     img = cv2.resize(src, (640, 480))
     copyImg, threImg = cal_floodFill(img)
 
-    import roadCal.roadCal as rc
     if threImg is None:
         continue
     threImg = cv2.GaussianBlur(threImg, (53,53), sigmaX=0)
     # line, direct = rc.hough(cv2.Canny(threImg, 100, 127))
 
-    theta = rc.fitRoad_cross(threImg, 20)
+    state, theta = rc.fitRoad_cross(threImg, 20)
 
-    if theta == 0:
-        print(f'Straight!')
-    else:
-        print(f'Turn!')
+    if state == rc.FIT_CROSS_STRAIGHT:
+        print(f'Straight!', end='\t')
+        print('Theta:', theta)
+    elif state == rc.FIT_CROSS_TRUN:
+        print(f'Turn!', end='\t')
         print('Theta: ', theta)
+    elif state == rc.FIT_CROSS_OUT:
+        print(f'Out of Road!')
+    else:
+        print(f'Error!', end='\t')
+        print('Info:', theta)
 
     cv2.imshow('floodFill', copyImg)
     cv2.imshow('Threshold', threImg)

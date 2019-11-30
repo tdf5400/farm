@@ -156,8 +156,8 @@ while True:
     time_start = time.perf_counter()
 
     # 图像初步处理
-    frame = cv2.imread('./testLib/Low/1.jpg')
-    # ret, frame = camera.read()
+    # frame = cv2.imread('./testLib/Low/1.jpg')
+    ret, frame = camera.read()
     img = cv2.resize(frame, (640, 480))
 
     # 开始计算
