@@ -44,7 +44,12 @@ def cal_floodFill(image):
 
     while True:
         # floodFill
-        cv2.floodFill(copyImg, mask, tuple(seed), (255, 255, 255), (20,100,255), (40,150,255), flags=cv2.FLOODFILL_FIXED_RANGE)
+        # --------------------------------19.12.21 阈值数据备份--------------------------------
+        # cv2.floodFill(copyImg, mask, tuple(seed), (255, 255, 255), (20, 100, 255), (40, 150, 255),
+        #               flags=cv2.FLOODFILL_FIXED_RANGE)
+        # ------------------------------------------------------------------------------------
+        cv2.floodFill(copyImg, mask, tuple(seed), (255, 255, 255), (10, 20, 20), (10, 20, 50),
+                      flags=cv2.FLOODFILL_FIXED_RANGE)
 
         # 二值化并统计渲染数量
         threImg = cv2.inRange(copyImg, copyImg[seed[1], seed[0]], copyImg[seed[1], seed[0]])    # 将与种子点一样变成白色的点划出来
@@ -86,14 +91,19 @@ while True:
     time_start = time.perf_counter()
 
     # 获取图像
-    ret, src = camera.read()
-    # src = cv2.imread('./testLib/camera/20.jpg')
-
-    img = cv2.resize(src, (640, 480))
-    copyImg, threImg = cal_floodFill(img)
-
-    if threImg is None:
+    # ret, src = camera.read()
+    # src = cv2.imread('./testLib/camera/17.jpg')
+    src = cv2.imread('C:/Users/tdf54/Desktop/TestImg/02.jpg')
+    if src is None:         # 图像存在性判断
+        print(f'No Image!')
         continue
+
+    img = cv2.resize(src, (640, 480))       # 分辨率重定义
+    copyImg, threImg = cal_floodFill(img)   # FloodFill计算
+    if threImg is None:                     # 取色失败则进入下一帧
+        print(f'FloodFill Error!')
+        continue
+
     threImg = cv2.GaussianBlur(threImg, (53,53), sigmaX=0)
     # line, direct = rc.hough(cv2.Canny(threImg, 100, 127))
 
