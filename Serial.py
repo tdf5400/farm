@@ -126,7 +126,7 @@ TestCode
 #     print(ports[i])
 # com = str(input('COM?'))
 # serialInit(com,115200,5)
-serialInit("COM3", 115200, 5)
-# data = readReg()
-sendData(rc.FIT_CROSS_TRUN, 0)
+# serialInit("COM3", 115200, 5)
+# # data = readReg()
+# sendData(rc.FIT_CROSS_TRUN, 0)
 

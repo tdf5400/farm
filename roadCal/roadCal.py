@@ -145,24 +145,30 @@ def fitRoad_middle(imgThre):
 
         # 计算中心
         middle = int((edge[0] + edge[1]) / 2)
-        points.append((i, middle))  # 记录数据
+        points.append(((height-1 - i), middle))  # 记录数据
 
     # 画路径
     for i in points:
-        road.itemset(i, 255)
+        road.itemset((height-1 - i[0], i[1]), 255)
     cv2.imshow('Road', road)
 
-    """
-    !!! 此处有问题
-    """
     # 拟合直线
-    points = np.uint8(points)
-    line = cv2.fitLine(points, cv2.DIST_L1, 0, 0.01, 0.01)
+    points = np.uint16(points)
 
-    K = math.asin(line[1])/np.pi*180
-    print(line)
+    # 一元线性回归 (yi = a + b * xi)
+    x_average = width / 2                   # x平均值
+    y_average = sum(points[:][1]) / height  # y平均值
+    b_numerator = 0   # 斜率b的分子
+    b_denominator = width * (width + 1) * (width*2 + 1) / 6     # 斜率b的分母
 
-    return K
+    # 计算b的分子
+    for i in points:
+        b_numerator += (i[0] - x_average) * (i[1] - y_average)
+
+    # 计算b
+    b = b_numerator / b_denominator
+
+    return b
 
 
 def hough(imgEdge, src=None):
@@ -242,7 +248,7 @@ def cal_floodFill(image):
         # cv2.floodFill(copyImg, mask, tuple(seed), (255, 255, 255), (20, 100, 255), (40, 150, 255),
         #               flags=cv2.FLOODFILL_FIXED_RANGE)
         # ------------------------------------------------------------------------------------
-        cv2.floodFill(copyImg, mask, tuple(seed), (255, 255, 255), (10, 20, 20), (10, 20, 50),
+        cv2.floodFill(copyImg, mask, tuple(seed), (255, 255, 255), (50, 100, 100), (50, 50, 100),
                       flags=cv2.FLOODFILL_FIXED_RANGE)
 
         # 二值化并统计渲染数量

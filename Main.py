@@ -5,11 +5,11 @@ import time
 import roadCal.roadCal as rc
 import Serial
 
-SERIAL_SWITCH = 1   # 串口控制开关
+SERIAL_SWITCH = 0   # 串口控制开关
 
 
 def main():
-    camera = cv2.VideoCapture(0)
+    # camera = cv2.VideoCapture(0)
 
     while True:
         # 等待串口指令
@@ -33,7 +33,7 @@ def main():
 
             # 获取图像
             # ret, src = camera.read()
-            src = cv2.imread('./testLib/camera/17.jpg')
+            src = cv2.imread('./testLib/camera/25.jpg')
             if src is None:  # 判断图像存在性
                 print(f'[console]No Image!')
                 continue
@@ -66,16 +66,17 @@ def main():
 
             # 显示处理时间
             time_elapsed = (time.perf_counter() - time_start)
-            print(f'[console]Used:{time_elapsed}')
-            print(f'[console]Fre:{(1 / time_elapsed)}')
+            print(f'[console]Used:\t{int(time_elapsed*1000)} ms', )
+            print("[console]Fre:\t%0.2f" % (1 / time_elapsed), " Hz")
 
             # 串口输出
-            if reg == Serial.ACQUIRE_STA:
-                Serial.sendData(state)
-                break
-            elif reg == Serial.ACQUIRE_BOTH:
-                Serial.sendData(state, int(staInfo*1000))   # 由于状态量为浮点数，所以放大后再发送
-                break
+            if SERIAL_SWITCH:
+                if reg == Serial.ACQUIRE_STA:
+                    Serial.sendData(state)
+                    break
+                elif reg == Serial.ACQUIRE_BOTH:
+                    Serial.sendData(state, int(staInfo*1000))   # 由于状态量为浮点数，所以放大后再发送
+                    break
 
             # Esc退出
             keyAction = cv2.waitKey(1)  # 延时1ms
