@@ -218,13 +218,20 @@ def hough(imgEdge, src=None):
             return src, line_direct_output
     return None, None
 
-def cal_floodFill(image):
+def cal_floodFill(image, loDiff, upDiff):
     """
     floodFill 计算地面方法
     :param image:Any
+    :param loDiff:最低阈值（三变量turple，如：(20, 100, 255)）
+    :param upDiff:最大阈值（三变量turple，如：(40, 150, 255)）
     :return: copyImg, threImg
     """
+    # __FILLCOLOR - floodfill时填充的颜色
+    __FILLCOLOR = (255, 255, 255)  # 绿色
+
+    # 预处理
     copyImg = cv2.medianBlur(image, 3)
+    # copyImg = cv2.GaussianBlur(image, (29, 29), sigmaX=0)
 
     # BGR转换为HSV进行处理
     copyImg = cv2.cvtColor(copyImg, cv2.COLOR_BGR2HSV)
@@ -248,7 +255,7 @@ def cal_floodFill(image):
         # cv2.floodFill(copyImg, mask, tuple(seed), (255, 255, 255), (20, 100, 255), (40, 150, 255),
         #               flags=cv2.FLOODFILL_FIXED_RANGE)
         # ------------------------------------------------------------------------------------
-        cv2.floodFill(copyImg, mask, tuple(seed), (255, 255, 255), (50, 100, 100), (50, 50, 100),
+        cv2.floodFill(copyImg, mask, tuple(seed), __FILLCOLOR, loDiff, upDiff,
                       flags=cv2.FLOODFILL_FIXED_RANGE)
 
         # 二值化并统计渲染数量
@@ -266,12 +273,12 @@ def cal_floodFill(image):
                 return None, None
 
     # 形态学运算
-    kernel = np.ones((57, 57), dtype=np.uint8)
+    kernel = np.ones((37, 37), dtype=np.uint8)
     threImg = cv2.morphologyEx(threImg, cv2.MORPH_CLOSE, kernel)
     # kernel = np.ones((35, 35), dtype=np.uint8)
     # threImg = cv2.morphologyEx(threImg, cv2.MORPH_OPEN, kernel)
-    kernel = np.ones((13, 13), dtype=np.uint8)
-    threImg = cv2.morphologyEx(threImg, cv2.MORPH_ERODE, kernel)
+    # kernel = np.ones((13, 13), dtype=np.uint8)
+    # threImg = cv2.morphologyEx(threImg, cv2.MORPH_ERODE, kernel)
 
     # 色彩空间转换BGR
     copyImg = cv2.cvtColor(copyImg, cv2.COLOR_HSV2BGR)

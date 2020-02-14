@@ -33,13 +33,13 @@ def main():
 
             # 获取图像
             # ret, src = camera.read()
-            src = cv2.imread('./testLib/camera/25.jpg')
+            src = cv2.imread('./testLib/camera/5.jpg')
             if src is None:  # 判断图像存在性
                 print(f'[console]No Image!')
                 continue
 
             img = cv2.resize(src, (640, 480))  # 分辨率重定义
-            copyImg, threImg = rc.cal_floodFill(img)  # FloodFill计算
+            copyImg, threImg = rc.cal_floodFill(img, (20, 100, 255), (40, 150, 255))  # FloodFill计算
             if threImg is None:  # 取色失败则进入下一帧
                 print(f'[console]FloodFill Error!')
                 continue
