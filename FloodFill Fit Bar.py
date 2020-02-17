@@ -1,7 +1,8 @@
 import cv2
+import numpy as np
 import roadCal.roadCal as rc
 
-CAMERA_FLAG = 1  # 是否使用摄像头
+CAMERA_FLAG = 0  # 是否使用摄像头
 
 # 全局变量
 __img = 0
@@ -48,15 +49,18 @@ def __main():
         print("使用摄像头！")
         __camera = cv2.VideoCapture(0)
         ret, src = __camera.read()
+
     else:
         print("使用内置图片！")
-        src = cv2.imread('./testLib/camera/36.jpg')
+        src = cv2.imread('./testLib/camera/test0.jpg')
 
     if src is None:  # 判断图像存在性
         print("图像不存在！")
     else:
-        __img = cv2.resize(src, (640, 480))  # 分辨率重定义
-        __img = cv2.GaussianBlur(__img, (53, 53), sigmaX=0)
+        __img = cv2.resize(src,
+                 tuple(map(int, np.array([640, 480])/2.5)))  # 分辨率重定义
+
+        __img = cv2.GaussianBlur(__img, (13, 13), sigmaX=0)
 
         __refresh(None)
 
@@ -76,6 +80,8 @@ if __name__ == "__main__":
 
 
     while(True):
+        if CAMERA_FLAG:
+            __refresh(None)
         # Esc退出
         keyAction = cv2.waitKey(1)  # 延时1ms
         if keyAction == 27:  # Esc

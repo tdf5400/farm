@@ -33,18 +33,19 @@ def main():
 
             # 获取图像
             # ret, src = camera.read()
-            src = cv2.imread('./testLib/camera/5.jpg')
+            src = cv2.imread('./testLib/camera/test2.jpg')
             if src is None:  # 判断图像存在性
                 print(f'[console]No Image!')
                 continue
 
-            img = cv2.resize(src, (640, 480))  # 分辨率重定义
-            copyImg, threImg = rc.cal_floodFill(img, (20, 100, 255), (40, 150, 255))  # FloodFill计算
+            img = cv2.resize(src,
+                 tuple(map(int, np.array([640, 480])/2.5)))  # 分辨率重定义
+            copyImg, threImg = rc.cal_floodFill(img, (40, 0, 0), (10, 0, 0))  # FloodFill计算
             if threImg is None:  # 取色失败则进入下一帧
                 print(f'[console]FloodFill Error!')
                 continue
 
-            threImg = cv2.GaussianBlur(threImg, (53, 53), sigmaX=0)
+            threImg = cv2.GaussianBlur(threImg, (33, 33), sigmaX=0)
             # line, direct = rc.hough(cv2.Canny(threImg, 100, 127))
 
             state, staInfo = rc.fitRoad_cross(threImg, 20)
@@ -54,9 +55,10 @@ def main():
                 print('Theta:', staInfo)
             elif state == rc.FIT_CROSS_TRUN:
                 print(f'[console]Turn!', end='\t')
-                print('Theta: ', staInfo)
+                print('Theta:', staInfo)
             elif state == rc.FIT_CROSS_OUT:
-                print(f'[console]Out of Road!')
+                print(f'[console]Out of Road!', end='\t')
+                print('Info:', int(staInfo*100), '%')
             else:
                 print(f'[console]Error!', end='\t')
                 print('Info:', staInfo)

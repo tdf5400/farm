@@ -4,12 +4,59 @@ import math
 
 """
 路径计算方法整合
+20.02.16 使用B、C点的直线斜率结合曲率计算负反馈进行斜率输出
+         更改斜率判断规则，k>0-左边，k<0-右边
+20.02.17 出田垄时返回的数据为“图像中田地占画面高的比例”
 """
 
+## 状态标志
 FIT_CROSS_STRAIGHT = 0  # 直道
 FIT_CROSS_TRUN = 1      # 弯道
 FIT_CROSS_OUT = 2       # 出林道
 FIT_CROSS_ERR = -1      # 错误
+
+## 设置参数
+OUT_THRESHOLD = 0.65    # 出田垄进度计算-阈值
+
+
+def fitRoad_Out_Conf(imgThre, threshold):
+    """
+    计算出田垄后，图像中田地占画面高的比例
+    :param imgThre: 二值化图像
+    :param threshold: 判定条件（百分数，0~1）
+    （一行中有threshold%的值<127-->>道路）
+    :return: 数值正确 - 道路/画面高度
+             数值错误 - 0
+    """
+    # 合法性判断
+    if type(imgThre).__name__ != 'ndarray' or (threshold<0 or threshold>1):
+        return 0
+
+    threshold *= 100
+    copyImg = imgThre.copy()
+    height, width = copyImg.shape[0:2]
+
+    step = height/100  # 步长
+    times = 0               # 道路次数
+    errTimes = 0            # 3次判定失败则退出
+    # 行遍历
+    data = copyImg[(height-1)::-1, ]  # 切片
+    for i in range(100):
+        temp = data[int(i*step)]
+
+        if np.percentile(temp, threshold) < 127:
+            times += 1
+            errTimes = 0    # 清空错误次数
+        else:
+            errTimes += 1
+            if errTimes >= 3:
+                break
+
+    if times == 0:
+        return 0
+    else:
+        return times/100
+
 
 
 def fitRoad_cross(imgThre, threshold):
@@ -23,9 +70,15 @@ def fitRoad_cross(imgThre, threshold):
                     FIT_CROSS_OUT,      0
                     FIT_CROSS_ERR,      错误号
     """
+    # 参数设定
+    # W_cir - K值计算中圆曲率权值，K=K_BC-W_cir*K_cir
+    W_cir = 0.2
+    # Out_thre - 出田垄判断阈值，顶部有跳变时，两边跳变点
+    #            与边缘距离均小于Out_thre判断为出田垄
+    Out_thre = 3
+
     copyImg = imgThre.copy()
     height, width = copyImg.shape[0:2]
-    theta = 0  # 中线斜率，负-左边，正-右边
 
     # 检测边缘
     edgeImg = cv2.adaptiveThreshold(copyImg, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 7, 0)
@@ -36,20 +89,26 @@ def fitRoad_cross(imgThre, threshold):
     for i in range(height - 1, -1, -1):
         if edgeImg.item((i, middlePoint)) == 255:  # 向上前进遇到边缘
             startPoint = i + threshold if (i + threshold) < (height - 1) else (height - 2)
-            # 向左检测
+            # 向左检测（因为二值化图像经过高斯模糊，所以127也允许）
             for j in range(middlePoint, -1, -1):
-                if edgeImg.item((startPoint, j)) == 255:
+                if edgeImg.item((startPoint, j)) == 127 or edgeImg.item((startPoint, j)) == 255:
                     edge[0] = j
                     break
             # 向右检测
             for j in range(middlePoint, width):
-                if edgeImg.item((startPoint, j)) == 255:
+                if edgeImg.item((startPoint, j)) == 127 or edgeImg.item((startPoint, j)) == 255:
                     edge[1] = j
                     break
 
-            # 判断左右开口,取离中点近的值
+            ## 判断左右开口,取离中点近的值
             judge = 0  # 0-左，1-右
-            if abs(edge[0] - middlePoint) < abs(edge[1] - middlePoint):
+            distance_l, distance_r = abs(edge[0] - middlePoint), abs(edge[1] - middlePoint)
+            # 跳变点均靠近边缘则判断为出田垄
+            if (((width/2)-distance_l) < Out_thre) and (((width/2)-distance_r) < Out_thre):
+                road_rate = fitRoad_Out_Conf(edgeImg, OUT_THRESHOLD)
+                return FIT_CROSS_OUT, road_rate
+            # 朝向判断
+            if distance_l < distance_r:
                 judge = 0
             else:
                 judge = 1
@@ -67,7 +126,7 @@ def fitRoad_cross(imgThre, threshold):
                     break
             else:  # 底层找不到则上浮
                 for j in range((height-1), height - threshold, -1):
-                    for k in range(0 if judge == 0 else (width - 1), middlePoint, 1 if judge == 0 else -1):
+                    for k in range(middlePoint, width if judge == 0 else -1, 1 if judge == 0 else -1):
                         if edgeImg.item(j, k) == 255:
                             A = (j, k)
                             j = -1  # 退出双重循环
@@ -75,20 +134,36 @@ def fitRoad_cross(imgThre, threshold):
                     if j == -1:
                         break
 
-            # 边界长度
-            a = ((abs(B[0] - C[0])) ** 2 + (abs(B[1] - C[1])) ** 2) ** 0.5
-            b = ((abs(A[0] - C[0])) ** 2 + (abs(A[1] - C[1])) ** 2) ** 0.5
-            c = ((abs(B[0] - A[0])) ** 2 + (abs(B[1] - A[1])) ** 2) ** 0.5
-
-            if a == 0 or b == 0 or c == 0:  # 发生错误
+            ## 计算BC斜率K_BC（竖直方向为x轴方向,左方向为y轴方向，底层中点为原点O）
+            # 坐标系转换
+            A = (height - A[0], width / 2 - A[1])
+            B = (height - B[0], width / 2 - B[1])
+            C = (height - C[0], width / 2 - C[1])
+            if A == B == C:     # 数值正确性判断
                 return FIT_CROSS_ERR, 0
+            # 斜率计算
+            K_BC = (C[1]-B[1])/(C[0]-B[0])
 
-            Sabc = ((a + b + c) * (a + b) * (a + c) * (b + c)) ** 0.5  # 三角形abc面积
-            K = (4 * Sabc) / (a * b * c)  # 曲率
+            ## 计算K值
+            K_AC = (C[1]-A[1])/(C[0]-A[0])  # 计算AC斜率，判断是否在同一直线上
+            if K_BC == K_AC:
+                K = K_BC
+            else:
+                # 计算曲线上边界长度
+                a = ((abs(B[0] - C[0])) ** 2 + (abs(B[1] - C[1])) ** 2) ** 0.5
+                b = ((abs(A[0] - C[0])) ** 2 + (abs(A[1] - C[1])) ** 2) ** 0.5
+                c = ((abs(B[0] - A[0])) ** 2 + (abs(B[1] - A[1])) ** 2) ** 0.5
 
-            K *= -1 if judge == 1 else 1  # 左边空-负 右边空-正
+                if a == 0 or b == 0 or c == 0:  # 发生错误
+                    return FIT_CROSS_ERR, 0
+
+                Sabc = ((a + b + c) * (a + b) * (a + c) * (b + c)) ** 0.5  # 三角形abc面积
+                K_cir = (4 * Sabc) / (a * b * c)  # 曲率
+                K_cir = abs(K_cir)  # 曲率取绝对值
+
+                K = K_BC + W_cir*K_cir
+
             return FIT_CROSS_TRUN, K
-            break
 
     # 遇不到边缘,区分“直道”与“出路口”
     else:
@@ -105,7 +180,8 @@ def fitRoad_cross(imgThre, threshold):
 
         # 两边均无线则判断为出路口
         if edge == [0, width]:
-            return FIT_CROSS_OUT, 0
+            road_rate = fitRoad_Out_Conf(edgeImg, OUT_THRESHOLD)
+            return FIT_CROSS_OUT, road_rate
 
         # 直道修正
         try:
@@ -167,8 +243,9 @@ def fitRoad_middle(imgThre):
 
     # 计算b
     b = b_numerator / b_denominator
+    K = -b  # K>0-向左,K<0-向右
 
-    return b
+    return K
 
 
 def hough(imgEdge, src=None):
@@ -228,6 +305,7 @@ def cal_floodFill(image, loDiff, upDiff):
     """
     # __FILLCOLOR - floodfill时填充的颜色
     __FILLCOLOR = (255, 255, 255)  # 绿色
+    __FURTHERMORPH = 1  # 更精确的形态学运算开关
 
     # 预处理
     copyImg = cv2.medianBlur(image, 3)
@@ -243,9 +321,9 @@ def cal_floodFill(image, loDiff, upDiff):
     # mask[0:50][:] = 255
 
     # 计算种子点
-    seedThreshold = 20000   # 最少像素值
+    seedThreshold = int(h*w/7.5)  # 20000   # 最少像素值
     timesLimit = 5         # 计算次数限制
-    seed = [319, 479]       # 以画面中间最下面的点为起始点 （x, y）
+    seed = [int(w/2)-1, h-1]       # 以画面中间最下面的点为起始点 （x, y）
     times = 0               # 循环次数，若超过阈值则返回(None,None)
     seedMoveDistance = int(seed[1] / timesLimit)    # 失败后上升的距离
 
@@ -259,7 +337,7 @@ def cal_floodFill(image, loDiff, upDiff):
                       flags=cv2.FLOODFILL_FIXED_RANGE)
 
         # 二值化并统计渲染数量
-        threImg = cv2.inRange(copyImg, copyImg[seed[1], seed[0]], copyImg[seed[1], seed[0]])    # 将与种子点一样变成白色的点划出来
+        threImg = cv2.inRange(copyImg, copyImg[seed[1], seed[0]], copyImg[seed[1], seed[0]])    # 将与种子点一样被染色的点划出来
         threCounter = np.sum(threImg == 255)    # 统计出现的数量
 
         # 退出的判定
@@ -273,12 +351,29 @@ def cal_floodFill(image, loDiff, upDiff):
                 return None, None
 
     # 形态学运算
-    kernel = np.ones((37, 37), dtype=np.uint8)
+    if __FURTHERMORPH:  # 精确的形态学运算
+        # morph_size - morphImg外扩距离(单边)
+        # morphImg - 用于避免边缘导致的形态学运算错误
+        morph_size = 20
+        morphImg = np.zeros((h+morph_size*2, w+morph_size*2), dtype=np.uint8)
+        for i in range(h):
+            for j in range(w):
+                morphImg.itemset(morph_size+i, morph_size+j, threImg.item(i, j))
+        threImg = morphImg
+    kernel = np.ones((65, 65), dtype=np.uint8)
     threImg = cv2.morphologyEx(threImg, cv2.MORPH_CLOSE, kernel)
+
     # kernel = np.ones((35, 35), dtype=np.uint8)
     # threImg = cv2.morphologyEx(threImg, cv2.MORPH_OPEN, kernel)
-    # kernel = np.ones((13, 13), dtype=np.uint8)
+    # kernel = np.ones((7, 7), dtype=np.uint8)
     # threImg = cv2.morphologyEx(threImg, cv2.MORPH_ERODE, kernel)
+    if __FURTHERMORPH:  # 精确的形态学运算
+        # 取原来图像的框
+        temp = threImg.copy()
+        threImg = np.zeros((h, w), dtype=np.uint8)
+        for i in range(h):
+            for j in range(w):
+                threImg.itemset(i, j, temp.item(morph_size+i, morph_size+j))
 
     # 色彩空间转换BGR
     copyImg = cv2.cvtColor(copyImg, cv2.COLOR_HSV2BGR)
