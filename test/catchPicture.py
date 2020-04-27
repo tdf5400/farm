@@ -8,7 +8,7 @@ Main
 cap = cv2.VideoCapture(0)
 
 # 读取快门数
-log = np.load('./testLib/camera/log.npz')
+log = np.load('../testLib/camera/log.npz')
 number = log['order_number']
 
 while True:
