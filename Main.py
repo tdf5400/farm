@@ -8,12 +8,15 @@ import Serial
 """
 OPINION
 """
+CAP_SWITCH = 0      # 摄像头选择(0-不使用摄像头, 其他-摄像头编号+1)
 SERIAL_SWITCH = 0   # 串口控制开关
 DISPLAY_SWITCH = 1  # 显示处理结果
+path = './testLib/camera/20.jpg'#"C:\\Users\\tdf\\Desktop\\Machine Visual\\alley\\6.jpg"#
 
 
 def main():
-    # camera = cv2.VideoCapture(0)
+    if CAP_SWITCH:
+        camera = cv2.VideoCapture(CAP_SWITCH - 1)
 
     while True:
         # 等待串口指令
@@ -36,16 +39,17 @@ def main():
             time_start = time.perf_counter()
 
             # 获取图像
-            # ret, src = camera.read()
-            # src = cv2.imread('./testLib/camera/9.jpg')
-            src = cv2.imread("")
+            if CAP_SWITCH:
+                ret, src = camera.read()
+            else:
+                src = cv2.imread(path)
             if src is None:  # 判断图像存在性
                 print(f'[console]No Image!')
                 continue
 
             img = cv2.resize(src, (640, 480))  # 分辨率重定义
             # copyImg, threImg = rc.cal_floodFill(img, (20, 100, 255), (40, 150, 255))  # FloodFill计算
-            copyImg, threImg = rc.cal_floodFill(img, (9, 55, 51), (9, 55, 34), mask_wide=200)
+            copyImg, threImg = rc.cal_floodFill(img, (20, 50, 105), (40, 50, 105), mask_wide=200)
             if threImg is None:  # 取色失败则进入下一帧
                 print(f'[console]FloodFill Error!')
                 continue
@@ -53,7 +57,7 @@ def main():
             # threImg = cv2.GaussianBlur(threImg, (53, 53), sigmaX=0)
             # line, direct = rc.hough(cv2.Canny(threImg, 100, 127))
 
-            state, staInfo = rc.fitRoad_cross(threImg, 100, scanPercent=0.6, outroadThre=0.6)
+            state, staInfo = rc.fitRoad_cross(threImg, 50, scanPercent=0.6, outroadThre=0.6)
 
             if state == rc.FIT_CROSS_STRAIGHT:
                 print(f'[console]Straight!', end='\t')

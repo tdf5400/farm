@@ -93,7 +93,7 @@ def fitRoad_cross(imgThre, threshold, scanPercent=0.7, outroadThre=0.8):
     #            与边缘距离均小于Out_thre判断为出田垄
     #            Out_thre_cache 用于配合floodfill的mask用法
     Out_thre = Out_thre_cache + 3
-    DISPLAY_PROCESS = 1  # 显示十字法计算轨迹（调试用）
+    DISPLAY_PROCESS = 0  # 显示十字法计算轨迹（调试用）
 
     # 数值合法性检查
     if not 0 <= scanPercent <= 1:
@@ -218,20 +218,23 @@ def fitRoad_cross(imgThre, threshold, scanPercent=0.7, outroadThre=0.8):
 
         # 直道修正
         try:
-            lines_theta = fitRoad_middle(copyImg)
+            lines_theta = fitRoad_middle(copyImg, activation=True)  # 使用激活函数
             return FIT_CROSS_STRAIGHT, lines_theta
         except IOError as e:  # 错误报告
             return FIT_CROSS_ERR, -3
     return FIT_CROSS_ERR, -1
 
 
-def fitRoad_middle(imgThre, activation=True):
+def fitRoad_middle(imgThre, activation=False):
     """
     计算路径（以每行）（适用于直道）
     :param imgThre: 路径的二值化图像
     :param activation: 是否使用激活函数（高斯）
     :return: 路线斜率
     """
+    # 参数设定
+    DISPLAY_PROCESS = 0     # 显示计算路径（调试用）
+
     copyImg = imgThre.copy()
     height, width = copyImg.shape[0:2]
     width_middle = int(width / 2)  # 水平中心点
@@ -276,16 +279,16 @@ def fitRoad_middle(imgThre, activation=True):
                                                 Gaussian_distributionList[i - 1]))
         points = newList
 
-    # 画路径
-    for i in range(0, len(points)):
-        road.itemset((height - 1 - i, width_middle - points[i]), 255)
-    cv2.imshow('Road', road)
+    # 路径显示功能（DEBUG）
+    if DISPLAY_PROCESS:
+        for i in range(0, len(points)):
+            road.itemset((height - 1 - i, width_middle - points[i]), 255)
+        cv2.imshow('Road', road)
 
     # 一元线性回归,拟合直线 (yi = a + b * xi)
     lenth = len(points)
     x_average = lenth * (lenth+1) / (2*lenth)  # x平均值
     y_average = np.mean(points)  # y平均值
-    print(x_average, y_average)
     # b_numerator = 0  # 斜率b的分子
     # b_denominator = width * (width + 1) * (width * 2 + 1) / 6  # 斜率b的分母
 
@@ -293,8 +296,8 @@ def fitRoad_middle(imgThre, activation=True):
     # for i in range(0, len(points)):
     #     b_numerator += (i - x_average) * (points[i] - y_average)
 
-    # 计算b
-    b = y_average / x_average # b_numerator / b_denominator  # K>0-向左,K<0-向右
+    # 直接计算b
+    b = y_average / x_average   # b_numerator / b_denominator  # K>0-向左,K<0-向右
 
     return b
 
