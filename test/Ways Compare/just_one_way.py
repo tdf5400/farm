@@ -4,6 +4,7 @@ import numpy as np
 import time
 import roadCal.roadCal as rc
 
+imgPath = "../../testLib/banana/1.jpg"
 
 def floodFill(image):
     """
@@ -148,11 +149,12 @@ def cal_kmeans(src):
         return __area
 
 def main():
-    src = cv2.imread("../../testLib/farm/1.jpg")
-    src = cv2.resize(src, (640, 480))
-    cv2.imshow("raw", src)
-
-    if src is None:
+    try:
+        src = cv2.imread(imgPath)
+        src = cv2.resize(src, (640, 480))
+        cv2.imshow("raw", src)
+    except Exception:
+        print(f'[Error]No Image!')
         return
 
     # 固定种子点floodfill
@@ -160,14 +162,17 @@ def main():
     # cv2.imshow("floodfill_img", floodfill_thre)
 
     # 正式版floodfill
-    floodfill_img, floodfill_thre = rc.cal_floodFill(src, (20, 100, 255), (40, 150, 255))
-    cv2.imshow("floodfill_img_New", floodfill_thre)
+    try:
+        floodfill_img, floodfill_thre = rc.cal_floodFill(src, (11, 37, 44), (19, 62, 47), mask_wide=200)
+        cv2.imshow("floodfill_img_New", floodfill_thre)
 
-    # HSVthre_thre = HSV_threshold(cv2.cvtColor(src, cv2.COLOR_RGB2HSV), (300, 440, 340, 480), (150, 1000, 1000))
-    # cv2.imshow("HSVthre_img", HSVthre_thre)
-    #
-    # kmeans_thre = cal_kmeans(src)
-    # cv2.imshow("kmeans_img", kmeans_thre)
+        # HSVthre_thre = HSV_threshold(cv2.cvtColor(src, cv2.COLOR_RGB2HSV), (300, 440, 340, 480), (150, 1000, 1000))
+        # cv2.imshow("HSVthre_img", HSVthre_thre)
+        #
+        # kmeans_thre = cal_kmeans(src)
+        # cv2.imshow("kmeans_img", kmeans_thre)
+    except Exception:
+        print(f'[Error]Calculate Fail!')
 
     cv2.waitKey(0)
     cv2.destroyAllWindows()
