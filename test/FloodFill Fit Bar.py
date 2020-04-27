@@ -8,6 +8,7 @@ CAMERA_FLAG = 0  # 是否使用摄像头
 __img = 0
 __camera = 0
 
+
 def __refresh(x):
     global __img, __camera
 
@@ -30,7 +31,6 @@ def __refresh(x):
     upDirr = (__h, __s, __v)
     print(f"Parameter: {loDirr}, {upDirr}")
 
-
     copyImg, threImg = rc.cal_floodFill(__img, loDirr, upDirr)  # FloodFill计算
     if threImg is None:  # 取色失败则进入下一帧
         print("计算失败！")
@@ -52,18 +52,17 @@ def __main():
 
     else:
         print("使用内置图片！")
-        src = cv2.imread('./testLib/camera/test0.jpg')
+        src = cv2.imread('../testLib/farm/1.jpg')
 
     if src is None:  # 判断图像存在性
         print("图像不存在！")
     else:
         __img = cv2.resize(src,
-                 tuple(map(int, np.array([640, 480])/2.5)))  # 分辨率重定义
+                           tuple(map(int, np.array([640, 480]) / 2.5)))  # 分辨率重定义
 
-        __img = cv2.GaussianBlur(__img, (13, 13), sigmaX=0)
+        # __img = cv2.GaussianBlur(__img, (13, 13), sigmaX=0)
 
         __refresh(None)
-
 
 
 if __name__ == "__main__":
@@ -78,8 +77,7 @@ if __name__ == "__main__":
 
     __main()
 
-
-    while(True):
+    while (True):
         if CAMERA_FLAG:
             __refresh(None)
         # Esc退出
@@ -87,4 +85,3 @@ if __name__ == "__main__":
         if keyAction == 27:  # Esc
             cv2.destroyAllWindows()
             break
-

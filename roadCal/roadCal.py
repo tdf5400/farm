@@ -308,6 +308,7 @@ def cal_floodFill(image, loDiff, upDiff):
     __FURTHERMORPH = 1  # 更精确的形态学运算开关
 
     # 预处理
+    # copyImg = image
     copyImg = cv2.medianBlur(image, 3)
     # copyImg = cv2.GaussianBlur(image, (29, 29), sigmaX=0)
 
@@ -321,7 +322,7 @@ def cal_floodFill(image, loDiff, upDiff):
     # mask[0:50][:] = 255
 
     # 计算种子点
-    seedThreshold = int(h*w/7.5)  # 20000   # 最少像素值
+    seedThreshold = int(h*w/3)#7.5)  # 20000   # 最少像素值
     timesLimit = 5         # 计算次数限制
     seed = [int(w/2)-1, h-1]       # 以画面中间最下面的点为起始点 （x, y）
     times = 0               # 循环次数，若超过阈值则返回(None,None)
