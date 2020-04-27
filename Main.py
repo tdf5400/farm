@@ -5,7 +5,11 @@ import time
 import roadCal.roadCal as rc
 import Serial
 
+"""
+OPINION
+"""
 SERIAL_SWITCH = 0   # 串口控制开关
+DISPLAY_SWITCH = 1  # 显示处理结果
 
 
 def main():
@@ -33,21 +37,23 @@ def main():
 
             # 获取图像
             # ret, src = camera.read()
-            src = cv2.imread('./testLib/camera/5.jpg')
+            # src = cv2.imread('./testLib/camera/9.jpg')
+            src = cv2.imread("")
             if src is None:  # 判断图像存在性
                 print(f'[console]No Image!')
                 continue
 
             img = cv2.resize(src, (640, 480))  # 分辨率重定义
-            copyImg, threImg = rc.cal_floodFill(img, (20, 100, 255), (40, 150, 255))  # FloodFill计算
+            # copyImg, threImg = rc.cal_floodFill(img, (20, 100, 255), (40, 150, 255))  # FloodFill计算
+            copyImg, threImg = rc.cal_floodFill(img, (9, 55, 51), (9, 55, 34), mask_wide=200)
             if threImg is None:  # 取色失败则进入下一帧
                 print(f'[console]FloodFill Error!')
                 continue
 
-            threImg = cv2.GaussianBlur(threImg, (53, 53), sigmaX=0)
+            # threImg = cv2.GaussianBlur(threImg, (53, 53), sigmaX=0)
             # line, direct = rc.hough(cv2.Canny(threImg, 100, 127))
 
-            state, staInfo = rc.fitRoad_cross(threImg, 20)
+            state, staInfo = rc.fitRoad_cross(threImg, 100, scanPercent=0.6, outroadThre=0.6)
 
             if state == rc.FIT_CROSS_STRAIGHT:
                 print(f'[console]Straight!', end='\t')
@@ -61,8 +67,15 @@ def main():
                 print(f'[console]Error!', end='\t')
                 print('Info:', staInfo)
 
-            cv2.imshow('floodFill', copyImg)
-            cv2.imshow('Threshold', threImg)
+            # 结果显示
+            if DISPLAY_SWITCH:
+                cv2.imshow('floodFill', copyImg)
+                cv2.imshow('Threshold', threImg)
+                directImg = copyImg.copy()
+                img_h, img_w = directImg.shape[:2]
+                line_point = (int(img_w/2-1 - img_h*staInfo), 0)
+                cv2.line(directImg, (int(img_w/2 - 1), int(img_h - 1)), line_point, (0,0,255), 3)
+                cv2.imshow('Direct', directImg)
 
             # 显示处理时间
             time_elapsed = (time.perf_counter() - time_start)
