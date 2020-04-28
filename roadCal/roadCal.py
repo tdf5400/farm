@@ -92,6 +92,7 @@ def fitRoad_cross(imgThre, threshold, scanPercent=0.7, outroadThre=0.8):
     # Out_thre - 出田垄判断阈值，顶部有跳变时，两边跳变点
     #            与边缘距离均小于Out_thre判断为出田垄
     #            Out_thre_cache 用于配合floodfill的mask用法
+    global Out_thre_cache
     Out_thre = Out_thre_cache + 3
     DISPLAY_PROCESS = 0  # 显示十字法计算轨迹（调试用）
 
@@ -375,6 +376,7 @@ def cal_floodFill(image, loDiff, upDiff, mask_wide=0):
     h, w = image.shape[:2]
     mask = np.zeros([h + 2, w + 2], dtype=np.uint8)  # mask必须行和列都加2，且必须为uint8单通道阵列
     # 规划道路区域为感兴趣区域（排除扫描到路面外的干扰）
+    global Out_thre_cache
     if not mask_wide == 0:
         mask[:, 320 - mask_wide:320 + mask_wide] = 255
         mask = cv2.bitwise_not(mask)
@@ -384,7 +386,7 @@ def cal_floodFill(image, loDiff, upDiff, mask_wide=0):
         Out_thre_cache = 0  # 更新mask值
 
     # 计算种子点
-    seedThreshold = int(h * (w - 2 * mask_wide) / 5)  # 7.5)  # 20000   # 最少像素值（只取感兴趣区域）
+    seedThreshold = int(h * (w - 2*mask_wide) /  7.5)  # 20000   # 最少像素值（只取感兴趣区域）
     timesLimit = 5  # 计算次数限制
     seed = [int(w / 2) - 1, h - 1]  # 以画面中间最下面的点为起始点 （x, y）
     times = 0  # 循环次数，若超过阈值则返回(None,None)
