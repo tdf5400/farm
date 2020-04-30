@@ -6,9 +6,9 @@ import cv2
 imgPath = "../../testLib/banana/"
 output_path = "./output/"  # 输出计算结果的路径
 imgBegin = 1  # 图片开始的编号
-imgEnd = 31  # 图片结束的编号
+imgEnd = 50  # 图片结束的编号
 
-CAL_WAY = 1  # 计算方法 0-kmeans, 1-HSV, 大于2-Floodfill
+CAL_WAY = 3  # 计算方法 0-kmeans, 1-HSV, 大于2-Floodfill
 OUTPUT = 2  # 输出结果 0-DISABLE 1-ENABLE 2-输出与原图像的与计算结果
 
 if __name__ == "__main__":
@@ -21,13 +21,14 @@ if __name__ == "__main__":
             print("[Error]No Image!")
             continue
         count += 1       # 图片计数+1
+        img = cv2.resize(img, (640, 480))
         # img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         if CAL_WAY == 0:  # k-means
             output = just_one_way.cal_kmeans(img)
         elif CAL_WAY == 1:  # HSV
             output = just_one_way.HSV_threshold(img, (300, 440, 340, 480), (20, 150, 155))
         else:  # floodfill
-            output = rc.cal_floodFill(img, (18, 30, 100), (18, 30, 50), mask_wide=230)[1]
+            output = rc.cal_floodFill(img, (25, 50, 60), (26, 50, 60), mask_wide=170)[1]
         assert (output is not None), f"[Error]{i}.jpg Calculate Fail,Please check your param!"
 
 

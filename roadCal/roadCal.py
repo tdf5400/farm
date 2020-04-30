@@ -27,6 +27,7 @@ for i in range(480):
     Gaussian_distributionList.append(mathPack.Gaussian_distribution(i, 0, 100))
 np.float32(Gaussian_distributionList)
 
+
 # 用此变量向fitRoad_cross传递宽度
 
 
@@ -234,7 +235,7 @@ def fitRoad_middle(imgThre, activation=False):
     :return: 路线斜率
     """
     # 参数设定
-    DISPLAY_PROCESS = 0     # 显示计算路径（调试用）
+    DISPLAY_PROCESS = 0  # 显示计算路径（调试用）
 
     copyImg = imgThre.copy()
     height, width = copyImg.shape[0:2]
@@ -261,12 +262,11 @@ def fitRoad_middle(imgThre, activation=False):
 
         # 计算中心
         middle = int((edge[0] + edge[1]) / 2)
-        points[height - i - 1] = middle     # 记录中心点
+        points[height - i - 1] = middle  # 记录中心点
 
     # 坐标转换，与中心的差作为y值（直角坐标系逆时针旋转90°，底部中心点为原点）
     for i in range(len(points)):
         points[i] = width_middle - points[i]
-
 
     # 使用激活函数
     if activation:
@@ -288,7 +288,7 @@ def fitRoad_middle(imgThre, activation=False):
 
     # 一元线性回归,拟合直线 (yi = a + b * xi)
     lenth = len(points)
-    x_average = lenth * (lenth+1) / (2*lenth)  # x平均值
+    x_average = lenth * (lenth + 1) / (2 * lenth)  # x平均值
     y_average = np.mean(points)  # y平均值
     # b_numerator = 0  # 斜率b的分子
     # b_denominator = width * (width + 1) * (width * 2 + 1) / 6  # 斜率b的分母
@@ -298,7 +298,7 @@ def fitRoad_middle(imgThre, activation=False):
     #     b_numerator += (i - x_average) * (points[i] - y_average)
 
     # 直接计算b
-    b = y_average / x_average   # b_numerator / b_denominator  # K>0-向左,K<0-向右
+    b = y_average / x_average  # b_numerator / b_denominator  # K>0-向左,K<0-向右
 
     return b
 
@@ -386,11 +386,14 @@ def cal_floodFill(image, loDiff, upDiff, mask_wide=0):
         Out_thre_cache = 0  # 更新mask值
 
     # 计算种子点
-    seedThreshold = int(h * (w - 2*mask_wide) /  7.5)  # 20000   # 最少像素值（只取感兴趣区域）
+    if mask_wide == 0:
+        seedThreshold = int(h * w / 7.5)  # 20000   # 最少像素值（只取感兴趣区域）
+    else:
+        seedThreshold = int(h * (2 * mask_wide) / 7.5)  # 20000   # 最少像素值（只取感兴趣区域）
     timesLimit = 5  # 计算次数限制
     seed = [int(w / 2) - 1, h - 1]  # 以画面中间最下面的点为起始点 （x, y）
     times = 0  # 循环次数，若超过阈值则返回(None,None)
-    seedMoveDistance = int(seed[1] / timesLimit)  # 失败后上升的距离
+    seedMoveDistance = int(seed[1] * 0.5 / timesLimit)  # 失败后上升的距离（限高0.5）
 
     while True:
         # floodFill
@@ -405,9 +408,12 @@ def cal_floodFill(image, loDiff, upDiff, mask_wide=0):
         threImg = cv2.inRange(copyImg, copyImg[seed[1], seed[0]], copyImg[seed[1], seed[0]])  # 将与种子点一样被染色的点划出来
         threCounter = np.sum(threImg == 255)  # 统计出现的数量
 
-        # 退出的判定
-        if threCounter >= seedThreshold:
+        # 退出的判定（大于阈值且不等于ROI面积）
+        if threCounter >= seedThreshold and \
+                ((mask_wide == 0 and threCounter < (h * w))
+                 or (mask_wide and threCounter < (h * (2 * (mask_wide*0.95))))):
             break
+
         else:
             times += 1
             if times < timesLimit:

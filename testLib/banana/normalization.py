@@ -2,7 +2,7 @@
 
 import cv2 as cv
 img_mountStart = 0  # 照片起始编号
-img_mountStop = 11  # 照片结束编号
+img_mountStop = 35  # 照片结束编号
 img_fileLocate = ".\\"  # 路径
 img_form = ".jpg"   # 照片格式
 img_TargetSize = (640, 480) # 尺寸

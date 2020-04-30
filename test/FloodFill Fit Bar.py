@@ -8,7 +8,7 @@ CAMERA_FLAG = 0  # 是否使用摄像头
 # 全局变量
 __img = 0
 __camera = 0
-path = "../testLib/banana/1.jpg"     # 照片路径
+path = "../testLib/banana/23.jpg"     # 照片路径
 
 def __refresh(x):
     global __img, __camera
