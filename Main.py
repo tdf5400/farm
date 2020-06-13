@@ -11,7 +11,7 @@ OPINION
 CAP_SWITCH = 0      # 摄像头选择(0-不使用摄像头, 其他-摄像头编号+1)
 SERIAL_SWITCH = 0   # 串口控制开关
 DISPLAY_SWITCH = 1  # 显示处理结果
-path = "./testLib/banana/1.jpg"
+path = "./testLib/banana/18.jpg"
 
 
 def main():
@@ -49,7 +49,7 @@ def main():
 
             img = cv2.resize(src, (640, 480))  # 分辨率重定义
             # copyImg, threImg = rc.cal_floodFill(img, (20, 100, 255), (40, 150, 255))  # FloodFill计算
-            copyImg, threImg = rc.cal_floodFill(img, (20, 50, 105), (40, 50, 105), mask_wide=200)
+            copyImg, threImg = rc.cal_floodFill(img, (19, 51, 58), (12, 62, 29), mask_wide=0)
             if threImg is None:  # 取色失败则进入下一帧
                 print(f'[console]FloodFill Error!')
                 continue
@@ -73,6 +73,7 @@ def main():
 
             # 结果显示
             if DISPLAY_SWITCH:
+                cv2.imshow('raw', img)
                 cv2.imshow('floodFill', copyImg)
                 cv2.imshow('Threshold', threImg)
                 directImg = copyImg.copy()

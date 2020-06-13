@@ -33,14 +33,16 @@ if __name__ == "__main__":
 
 
         if OUTPUT:  # 保存图片
-            if OUTPUT == 2:  # 与原图像相与结果
+            if OUTPUT == 1:  # 与原图像相与结果
+                cv2.imshow('raw', img)
+                cv2.imshow('output', output)
+            elif OUTPUT == 2:
                 for j in range(output.shape[0]):
                     for k in range(output.shape[1]):
                         if output.item(j, k) == 255:  # output白色区域在img画成红色
                             img[j, k] = (0, 0, 255)
                 output = img
-            cv2.imwrite(output_path + str(i) + "-" + str(CAL_WAY) + ".jpg", output)
-        # cv2.imshow('output', output)
+                cv2.imwrite(output_path + str(i) + "-" + str(CAL_WAY) + ".jpg", output)
         cv2.waitKey(0)
 
     # 显示处理时间

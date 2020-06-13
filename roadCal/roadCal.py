@@ -220,7 +220,7 @@ def fitRoad_cross(imgThre, threshold, scanPercent=0.7, outroadThre=0.8):
 
         # 直道修正
         try:
-            lines_theta = fitRoad_middle(copyImg, activation=True)  # 使用激活函数
+            lines_theta = fitRoad_middle(copyImg, activation=False)  # 使用激活函数
             return FIT_CROSS_STRAIGHT, lines_theta
         except IOError as e:  # 错误报告
             return FIT_CROSS_ERR, -3
@@ -235,7 +235,7 @@ def fitRoad_middle(imgThre, activation=False):
     :return: 路线斜率
     """
     # 参数设定
-    DISPLAY_PROCESS = 0  # 显示计算路径（调试用）
+    DISPLAY_PROCESS = 1  # 显示计算路径（调试用）
 
     copyImg = imgThre.copy()
     height, width = copyImg.shape[0:2]
@@ -246,7 +246,18 @@ def fitRoad_middle(imgThre, activation=False):
     points = np.zeros(480, dtype=np.int16)
     points[0] = width_middle
 
-    for i in range(height - 2, -1, -1):  # 从底部第二行开始
+    # 检测道路高度
+    roadScanfStep = 15  # 检测步长
+    roadHeight = height # 道路信息的高度
+    for i in range(height - 2, -1, -roadScanfStep):  # 从底部第二行开始寻找顶端
+        for j in range(roadScanfStep):
+            if copyImg.item((i+j, width_middle)) == 255:  # 步中还有白色则退出
+                break
+        else:
+            roadHeight = i
+            break
+
+    for i in range(height - 2, roadHeight, -1):
         edge = [0, width - 1]
 
         # 从上个点的位置查找左边界
@@ -290,17 +301,21 @@ def fitRoad_middle(imgThre, activation=False):
     lenth = len(points)
     x_average = lenth * (lenth + 1) / (2 * lenth)  # x平均值
     y_average = np.mean(points)  # y平均值
-    # b_numerator = 0  # 斜率b的分子
-    # b_denominator = width * (width + 1) * (width * 2 + 1) / 6  # 斜率b的分母
+    b_numerator = 0  # 斜率b的分子
+    b_denominator = 0 #width * (width + 1) * (width * 2 + 1) / 6  # 斜率b的分母
 
     # 计算b的分子
-    # for i in range(0, len(points)):
-    #     b_numerator += (i - x_average) * (points[i] - y_average)
+    for i in range(0, len(points)):
+        b_numerator += (i - x_average) * (points[i] - y_average)
+        b_denominator += (i - x_average)**2
 
     # 直接计算b
-    b = y_average / x_average  # b_numerator / b_denominator  # K>0-向左,K<0-向右
+    b = b_numerator / b_denominator  # K>0-向左,K<0-向右
+    a = y_average - b*x_average
 
-    return b
+    direct_K = b + 0.005*a
+
+    return direct_K
 
 
 def hough(imgEdge, src=None):

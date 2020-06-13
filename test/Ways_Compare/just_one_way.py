@@ -4,7 +4,7 @@ import numpy as np
 import time
 import roadCal.roadCal as rc
 
-imgPath = "../../testLib/banana/1.jpg"
+imgPath = "../../testLib/banana/11.jpg"
 
 def floodFill(image):
     """
