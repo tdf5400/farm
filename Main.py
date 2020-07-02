@@ -11,7 +11,7 @@ OPINION
 CAP_SWITCH = 0      # 摄像头选择(0-不使用摄像头, 其他-摄像头编号+1)
 SERIAL_SWITCH = 0   # 串口控制开关
 DISPLAY_SWITCH = 1  # 显示处理结果
-path = "./testLib/banana/18.jpg"
+path = "./testLib/2.jpg"
 
 
 def main():

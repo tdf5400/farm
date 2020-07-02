@@ -301,8 +301,8 @@ def fitRoad_middle(imgThre, activation=False):
     lenth = len(points)
     x_average = lenth * (lenth + 1) / (2 * lenth)  # x平均值
     y_average = np.mean(points)  # y平均值
-    b_numerator = 0  # 斜率b的分子
-    b_denominator = 0 #width * (width + 1) * (width * 2 + 1) / 6  # 斜率b的分母
+    b_numerator = 0     # 斜率b的分子
+    b_denominator = 0   # 斜率b的分母
 
     # 计算b的分子
     for i in range(0, len(points)):
@@ -313,8 +313,8 @@ def fitRoad_middle(imgThre, activation=False):
     b = b_numerator / b_denominator  # K>0-向左,K<0-向右
     a = y_average - b*x_average
 
+    print('y = {}x + {}'.format(b, a))
     direct_K = b + 0.005*a
-
     return direct_K
 
 
